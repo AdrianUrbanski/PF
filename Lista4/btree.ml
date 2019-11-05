@@ -3,14 +3,31 @@ open List
 type 'a btree = Leaf | Node of 'a btree * 'a * 'a btree;;
 
 let isBalanced t =
-  let rec countNodes t =
+  (* aux: btree -> isBalanced * subtreeNodeTally *)
+  let rec aux t =
     match t with
-      Leaf -> 0
-    | Node(l, _, r) -> countNodes(l) + countNodes(r) + 1
+      Leaf -> (true, 0)
+    | Node(l,_,r) -> let (isLeftBalanced, leftTally) = aux l and (isRightBalanced, rightTally) = aux r in
+      (isLeftBalanced && isRightBanalced && abs(leftTally-rightTally)<=1, leftTally+rightTally+1)
   in
-  match t with
-    Leaf -> true
-  | Node(l, _, r) -> abs(countNodes(l)-countNodes(r)) <= 1;;
+  let (b, _) = aux t in b;;
+
+let rec makeBalancedTree xs =
+  let rec split l r cnt n =
+    if cnt = n/2
+    then (rev l),r
+    else match r with
+        [] -> l,r
+      | hd::tl -> split (hd::l) tl (cnt+1) n
+  in
+  match xs with
+    [] -> Leaf
+  | hd::tl -> let (l, r) = (split [] tl 0 (length tl)) in
+    Node(
+      makeBalancedTree l,
+      hd,
+      makeBalancedTree r
+    );;
 
 let t1 = Node
     (Node
@@ -23,6 +40,8 @@ let t1 = Node
      Node(Leaf, 'e', Leaf)
     );;
 
+isBalanced t1;;
+
 let t2 = Node
     (Node
        (
@@ -33,23 +52,10 @@ let t2 = Node
      Node(Leaf, 'd', Leaf)
     );;
 
-isBalanced t1;;
 isBalanced t2;;
 
-let rec makeBalancedTree xs =
-  let rec split l r cnt n =
-    match r with
-      [] -> failwith "error"
-    | hd::tl ->
-      if cnt = n/2
-      then (rev l)*hd*tl
-      else split (hd::l) tl (cnt+1) n
-  in
-  match xs with
-    [] -> Leaf
-  | hd::tl -> let (l, x, r) = (split [] xs 0 (length xs)) in
-    Node(
-      makeBalancedTree l,
-      x,
-      makeBalancedTree r
-    );;
+
+makeBalancedTree [1;2;3];;
+makeBalancedTree [1;2;3;4;5];;
+
+isBalanced (makeBalancedTree [1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21]);;
