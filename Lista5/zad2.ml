@@ -69,33 +69,34 @@ let f2 = (Conjunction(
 
 isTautology f2;;
 
+
 type nnf =
-    Literal of char*bool
-  | Conjunction of nnf*nnf
-  | Disjunction of nnf*nnf;;
+    NLiteral of char*bool
+  | NConjunction of nnf*nnf
+  | NDisjunction of nnf*nnf;;
 
 let nnf_of_formula f =
   let rec aux f negated =
     match f with
-      Variable c -> Literal (c, (not negated))
+      Variable c -> NLiteral(c, (not negated))
     | Negation f -> aux f (not negated)
     | Conjunction(f1, f2) ->
       if negated
-      then Disjunction(
+      then NDisjunction(
           (aux f1 negated),
           (aux f2 negated)
         )
-      else Conjunction(
+      else NConjunction(
           (aux f1 negated),
           (aux f2 negated)
         )
     | Disjunction(f1, f2) ->
       if negated
-      then Conjunction(
+      then NConjunction(
           (aux f1 negated),
           (aux f2 negated)
         )
-      else Disjunction(
+      else NDisjunction(
           (aux f1 negated),
           (aux f2 negated)
         )
@@ -119,18 +120,41 @@ let f3 = Negation(
 
 nnf_of_formula f3;;
 
-let rec cnf_of_nnf f =
-  match f with
-    Literal _ -> f
-  | Disjunction(f1, Conjunction(f2, f3)) -> Conjunction(Disjunction(cnf_of_nnf f1, cnf_of_nnf f2), Disjunction(cnf_of_nnf f1, cnf_of_nnf f3))
-  | Disjunction(Conjunction(f2, f3), f1) -> Conjunction(Disjunction(cnf_of_nnf f1, cnf_of_nnf f2), Disjunction(cnf_of_nnf f1, cnf_of_nnf f3))
-  | Conjunction(f1, f2) -> Conjunction(cnf_of_nnf f1, cnf_of_nnf f2)
-  | Disjunction(f1, f2) -> Disjunction(cnf_of_nnf f1, cnf_of_nnf f2);;
+type literal =
+  Literal of char*bool
 
-let nnf_f1 = Disjunction(
-    Literal('p', true),
-    Conjunction(
-      Literal('q', true),
-      Literal('r', true)
+type cnf =
+    Clause of literal list
+  | CConjunction of cnf list;;
+
+let mergeCnf c1 c2 =
+  match c1, c2 with
+    Clause(l1), Clause(l2) -> Clause(l1@l2)
+  | Clause _, CConjunction l -> CConjunction (c1::l)
+  | CConjunction l, Clause _ -> CConjunction (c2::l)
+  | CConjunction l1, CConjunction l2 -> CConjunction(l1@l2);;
+
+let rec cnf_of_nnf f =
+  let rec make_cnf f =
+    match f with
+      NLiteral _ -> f
+    | NDisjunction(f1, NConjunction(f2, f3)) -> NConjunction(NDisjunction(make_cnf f1, make_cnf f2), NDisjunction(make_cnf f1, make_cnf f3))
+    | NDisjunction(NConjunction(f2, f3), f1) -> NConjunction(NDisjunction(make_cnf f1, make_cnf f2), NDisjunction(make_cnf f1, make_cnf f3))
+    | NConjunction(f1, f2) -> NConjunction(make_cnf f1, make_cnf f2)
+    | NDisjunction(f1, f2) -> NDisjunction(make_cnf f1, make_cnf f2)
+  in
+  let rec convert f =
+    match f with
+      NLiteral(l,b) -> Clause [Literal(l,b)]
+    | NDisjunction(f1, f2)
+    | NConjunction(f1, f2) -> mergeCnf (convert f1) (convert f2)
+  in
+  convert (make_cnf f);;
+
+let nnf_f1 = NDisjunction(
+    NLiteral('p', true),
+    NConjunction(
+      NLiteral('q', true),
+      NLiteral('r', true)
     )
   )
