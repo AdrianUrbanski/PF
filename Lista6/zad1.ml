@@ -47,12 +47,18 @@ let lPi2 =
   let rec aux (f, s) = LCons2(f, lazy(aux((f+.(1./.s), ((cmp s) s 2.)*. -1.)))) in
   aux (1., -3.);;
 
-let rec ltake = function(0, _) -> []
+let rec ltake2 = function(0, _) -> []
                       | (_, LNil2) -> []
-                      | (n, LCons2(x,lazy xs)) -> x::ltake(n-1,xs);;
+                      | (n, LCons2(x,lazy xs)) -> x::ltake2(n-1,xs);;
 
 let rec map3_2 f = function
-    LCons2(x1, lazy (LCons2(x2, lazy (LCons2(x3, xs))))) -> LCons2(f x1 x2 x3, xs)
+    LCons2(x1, lazy (LCons2(x2, lazy (LCons2(x3, lazy xs))))) -> LCons2((f x1 x2 x3), lazy (map3_2 f xs))
   | _ -> failwith "this should not happen";;
 
 let fasterPi2 = map3_2 eulersTransformation lPi2;;
+
+List.map (fun k -> 4.*.k) (ltake (10, lPi));;
+List.map (fun k -> 4.*.k) (ltake (10, fasterPi));;
+
+List.map (fun k -> 4.*.k) (ltake2 (10, lPi2));;
+List.map (fun k -> 4.*.k) (ltake2 (10, fasterPi2));;
