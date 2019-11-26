@@ -15,13 +15,16 @@ let fact_ref n =
 ;;
 
 let fix_ref f x =
-  let g = ref f in
-  let prev = ref x in
+  let g = ref (fun a -> a) in
   begin
-    while not ((!g x) = !prev) do
-      prev := !g x
-      g := !g f;
+    while not ((f !g) x = !g x) do
+      g := f !g
     done;
   end;
   (!g x)
 ;;
+
+let fact2 = fix_ref (fun f -> fun n -> if n = 0 then 1 else n*f(n-1));;
+
+fact 5;;
+fact2 5;;

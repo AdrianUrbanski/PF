@@ -29,11 +29,20 @@ let fib_calls = calls_empty;;
 calls_add 0 0 fib_calls;;
 calls_add 1 1 fib_calls;;
 
+let fib_calls2 = calls_empty;;
+
 let rec fib n =
   match n with
     0 -> 0
   | 1 -> 1
   | n -> fib (n-1) + fib (n-2);;
+
+let memo f calls n =
+  match calls_find n calls with
+    Arg(v) -> v
+  | Nil -> let v = f n in
+	   calls_add n v;
+	   v;;
 
 let rec fib_memo n =
   match calls_find n fib_calls with

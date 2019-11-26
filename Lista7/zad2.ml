@@ -34,3 +34,4 @@ let l2 = LMcons(3, ref (LMcons(4, ref LMnil)));;
 let lc = concat_copy l1 l2;;
 l1;;
 let ls = concat_share l1 l2;;
+l1;;
