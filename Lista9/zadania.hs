@@ -32,6 +32,7 @@ iperm' xs = aux [[]] xs where
   aux acc [] = acc
   aux acc (elem:rest) = aux (concatMap (\xs -> insert xs elem) acc) rest
 
+{-|
 select :: ([a],[a]) -> [([a],[a])]
 select (xs, ys) = aux xs [] [] ys where
   aux :: [a] -> [([a], [a])] -> [a] -> [a] -> [([a], [a])]
@@ -44,6 +45,7 @@ sperm xs = map fst (aux [([], xs)]) where
   aux xs = if (snd (head xs)) == []
            then xs
            else concatMap select xs
+-}
 
 -- zad 5
 
@@ -62,66 +64,101 @@ qsortBy f (hd:tl) = (qsortBy f [x | x <- tl, f hd x])++[hd]++(qsortBy f [x | x <
 
 -- zad 7
 
-{-|
-data Tree a = Node (Tree a) a (Tree a) | Leaf
+data Tree a = Node (Tree a) a (Tree a) | Leaf deriving (Show)
 
 treeEmpty :: Ord a => Tree a
 treeEmpty = Leaf
 
 treeInsert :: Ord a => a -> Tree a -> Tree a
-treeInsert a (Leaf) = Node Leaf a Leaf
+treeInsert a Leaf = Node Leaf a Leaf
 treeInsert a (Node l v r) | a == v = (Node l v r) -- values are unique
-                       | a < v = (Node (treeAdd a l) v r)
-                       | a > v = (Node l v (treeAdd a r))
-
-treeRemove :: Ord a => a -> Tree a -> Tree a
+                       | a < v = (Node (treeInsert a l) v r)
+                       | a > v = (Node l v (treeInsert a r))
 
 treeFromList :: Ord a => [a] -> Tree a
-treeFromList xs = foldr treeAdd treeEmpty xs
+treeFromList xs = foldr treeInsert treeEmpty xs
 
-treeFromSortedList :: Ord a => [a] -> Tree a
+treeJoin :: Ord a => Tree a -> Tree a -> Tree a
+treeJoin l Leaf = l
+treeJoin Leaf r = r
+treeJoin l (Node rl rv rr) = (Node (treeJoin l rl) rv rr)
 
-listFromTree :: Ord a => Tree a -> [a]
-listFromTree Leaf = []
-listFromTree (Node l v r) = (listFromTree l)++[v]++(listFromTree r)
+treeJoinM :: Ord a => Tree a -> a -> Tree a -> Tree a
+treeJoinM l v r = treeJoin l (treeJoin (Node Leaf v Leaf) r)
 
-treeMerge :: Ord a => Tree a -> Tree a -> Tree a
-treeMerge t1 t2 = treeFromList(listUnion [] (listFromTree t1) (listFromTree t2)) where
-  listUnion :: Ord a => [] -> [a] -> [a] -> [a]
-  listUnion xs [] = xs
-  listUnion [] ys =  ys
-  listUnion (x:tlxs) (y:tlys) if x<y then x:listUnion tlxs tlys else y:listUnion tlxs tlys
+treeSplit :: Ord a => Tree a -> a -> (Tree a, Bool, Tree a)
+treeSplit Leaf k = (Leaf, False, Leaf)
+treeSplit (Node l v r) k | v == k = (l, True, r)
+                         | v < k =
+                             let (lt, b, rt) = treeSplit r k in
+                               ((treeJoin (Node l v Leaf) lt), b, rt)
+                         | v > k =
+                             let (lt, b, rt) = treeSplit l k in
+                               (lt, b, (treeJoin rt (Node Leaf v r)))
+
+treeUnion :: Ord a => Tree a -> Tree a -> Tree a
+treeUnion l Leaf = l
+treeUnion Leaf r = r
+treeUnion (Node ll lv lr) r =
+  let (rl, _, rr) = treeSplit r lv
+      (nl, nr) = ((treeUnion ll rl), (treeUnion lr rr))
+  in treeJoinM nl lv nr
 
 treeIntersection :: Ord a => Tree a -> Tree a -> Tree a
-treeIntersection t1 t2
+treeIntersection Leaf _ = Leaf
+treeIntersection _ Leaf = Leaf
+treeIntersection (Node ll lv lr) r =
+  let (rl, b, rr) = treeSplit r lv
+      (nl, nr) = ((treeIntersection ll rl), (treeIntersection lr rr))
+  in if b then treeJoinM nl lv nr else treeJoin nl nr
 
+treeDifference :: Ord a => Tree a -> Tree a -> Tree a
+treeDifference Leaf _ = Leaf
+treeDifference l Leaf = l
+treeDifference (Node ll lv lr) r =
+  let (rl, b, rr) = treeSplit r lv
+      (nl, nr) = ((treeDifference ll rl), (treeDifference lr rr))
+  in if b then treeJoin nl nr else treeJoinM nl lv nr
 
-data Set a = Fin (Tree a) | Cofin (Tree a)
+treeFind :: Ord a => a -> Tree a -> Bool
+treeFind a Leaf = False
+treeFind a (Node l v r) | a == v = True
+                        | a < v = (treeFind a l)
+                        | a > v = (treeFind a r)
+
+t1 = Node (Node (Node Leaf 1 Leaf) 5 (Node Leaf 7 Leaf))  8 (Node Leaf 9 Leaf)
+t2 = Node (Node Leaf 5 Leaf) 6 (Node Leaf 8 Leaf)
+
+data Set a = Fin (Tree a) | Cofin (Tree a) deriving (Show)
 
 setFromList :: Ord a => [a] -> Set a
-setFromList xs = Fin(treeFromList xs)
+setFromList xs = Fin (treeFromList xs)
 
 setEmpty :: Ord a => Set a
-setEmpty = Fin(treeEmpty)
+setEmpty = Fin treeEmpty
 
 setFull :: Ord a => Set a
-setFull = Cofin(treeEmpty)
+setFull = Cofin treeEmpty
 
 setUnion :: Ord a => Set a -> Set a -> Set a
-setUnion = Fin(t1) Fin(t2) = Fin(treeMerge t1 t2)
-setUnion = Fin(t1) Cofin(t2) = Cofin(treeSub t1 t2)
--- s1' U s2 = (s1\s2)'
-setUnion = Cofin(t1) Fin(t2) = Cofin(treesub t2 t1)
--- s1 U s2' = (s2\s1)'
-setUnion = Cofin(t1) Cofin(t2) = Cofin(treeIntersection t1 t2)
--- s1' U s2' = (s2/\s1)'
+setUnion (Fin t1) (Fin t2) = Fin (treeUnion t1 t2)
+setUnion (Fin t1) (Cofin t2) = Cofin (treeDifference t2 t1) -- s1 U s2' = (s2\s1)'
+setUnion (Cofin t1) (Fin t2) = Cofin (treeDifference t1 t2) -- s1' U s2 = (s1\s2)'
+setUnion (Cofin t1) (Cofin t2) = Cofin (treeIntersection t1 t2) -- s1' U s2' = (s2/\s1)'
 
 setIntersection :: Ord a => Set a -> Set a -> Set a
-setIntersection Fin(t1) Fin(t2) = Fin(treeIntercetion t1 t2)
-setIntersection Cofin(t1) Fin(t2) = Fin(treeSub t1 t2)
--- s1' /\ s2 = s2\s1
-setIntersection Fin(t1) Cofin(t2) = Fin(treeSub t1 t2)
--- s1 /\ s2' = s1\s2
-setIntersection Cofin(t1) Cofin(t2) = Cofin(treeSum t1 t2)
--- s1' /\ s2' = (s1Us2)'
--}
+setIntersection (Fin t1) (Fin t2) = Fin (treeIntersection t1 t2)
+setIntersection (Cofin t1) (Fin t2) = Fin (treeDifference t2 t1) -- s1' /\ s2 = s2\s1
+setIntersection (Fin t1) (Cofin t2) = Fin (treeDifference t1 t2) -- s1 /\ s2' = s1\s2
+setIntersection (Cofin t1) (Cofin t2) = Cofin (treeUnion t1 t2) -- s1' /\ s2' = (s1Us2)'
+
+setComplement :: Ord a => Set a -> Set a
+setComplement (Fin t) = Cofin t
+setComplement (Cofin t) = Fin t
+
+setMember :: Ord a => a -> Set a -> Bool
+setMember k (Fin t) = treeFind k t
+setMember k (Cofin t) = not (treeFind k t)
+
+s1 = setFromList [1, 5, 7, 8, 9]
+s2 = setFromList [5, 6, 8]
