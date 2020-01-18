@@ -33,10 +33,29 @@ catafilter :: (x -> Bool) -> [x] -> [x]
 catafilter p xs =
   cata (\x -> \ys -> if p x then x:ys else ys) [] xs where
 
-data  Expr a b = Number b | Var a | Plus (Expr a b) (Expr a b)
+catamap :: (x -> y) -> [x] -> [y]
+catamap f xs =
+  cata (\x -> \ys -> (f x):ys) [] xs
 
-anaExpr :: Num b => (Expr a b -> Maybe(b, Expr a b)) -> Expr a b -> b
+data Expr a b = Number b | Var a | Plus (Expr a b) (Expr a b)
+
+data Which a b c = N b | V a | P (c, c)
+
+anaExpr :: Num b => (c -> Which a b c) -> c -> Expr a b
 anaExpr f st = case f st of
-  Nothing -> 0
-  Just (v, st') -> 
+  N b -> Number b
+  V a -> Var a
+  P (st1, st2) -> Plus (anaExpr f st1) (anaExpr f st2)
 
+cataExpr :: (a -> c) -> (b -> c) -> (c -> c -> c) -> Expr a b -> c
+cataExpr f _ _ (Var a) = f a
+cataExpr _ f _ (Number b) = f b
+cataExpr f g h (Plus e1 e2) = h (cataExpr f g h e1) (cataExpr f g h e2)
+
+eval :: (Eq a, Num b) => [(a, b)] -> Expr a b -> b
+eval env expr =
+  cataExpr (\a -> f env a) id (+) expr where
+  f :: (Eq x, Num y) => [(x, y)] -> x -> y
+  f env a = case (lookup a env) of
+    Nothing -> 0
+    Just b -> b
