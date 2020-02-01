@@ -8,13 +8,13 @@ ocamldep.opt -modules logic.ml > logic.ml.depends # cached
 # Target: logic.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:logic.cmo, file:logic.ml, implem, ocaml, quiet, traverse }
 ocamlc.opt -c -o logic.cmo logic.ml # cached
 # Target: proof.mli.depends, tags: { extension:mli, file:proof.mli, ocaml, ocamldep, quiet, traverse }
-ocamldep.opt -modules proof.mli > proof.mli.depends # cached
+ocamldep.opt -modules proof.mli > proof.mli.depends
 # Target: proof.cmi, tags: { byte, compile, extension:mli, file:proof.mli, interf, ocaml, quiet, traverse }
-ocamlc.opt -c -o proof.cmi proof.mli # cached
+ocamlc.opt -c -o proof.cmi proof.mli
 # Target: proof.ml.depends, tags: { extension:ml, file:proof.ml, ocaml, ocamldep, quiet, traverse }
-ocamldep.opt -modules proof.ml > proof.ml.depends # cached
+ocamldep.opt -modules proof.ml > proof.ml.depends
 # Target: proof.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:proof.cmo, file:proof.ml, implem, ocaml, quiet, traverse }
-ocamlc.opt -c -o proof.cmo proof.ml # cached
+ocamlc.opt -c -o proof.cmo proof.ml
 # Target: logic.cma, tags: { byte, extension:cma, file:logic.cma, library, link, ocaml, quiet, traverse }
-ocamlc.opt -a logic.cmo proof.cmo -o logic.cma # cached
+ocamlc.opt -a logic.cmo proof.cmo -o logic.cma
 # Compilation successful.

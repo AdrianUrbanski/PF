@@ -8,12 +8,13 @@ val proof : (string * formula) list -> formula -> proof
 (** Zamienia ukończony dowód na twierdzenie *)
 val qed : proof -> theorem
 
-(** Zwraca jeśli dowód jest ukończony, zwraca None. W przeciwnym wypadku
+(** Jeśli dowód jest ukończony, zwraca None. W przeciwnym wypadku
   zwraca Some(assm, phi), gdzie assm oraz phi to odpowiednio dostępne
   założenia oraz formuła do udowodnienia w aktywnym podcelu *)
 val goal : proof -> ((string * formula) list * formula) option
 
-(** Przesuwa cylkicznie aktywny podcel na następny (od lewej do prawej) *)
+(** Przesuwa cylkicznie aktywny podcel na następny (od lewej do prawej)
+  //jeśli nie ma już dostępnych podcelów, pozostawia theorem w korzeniu *)
 val next : proof -> proof
 
 (** Wywołanie intro name pf odpowiada regule wprowadzania implikacji.
@@ -61,7 +62,7 @@ val apply_thm : theorem -> proof -> proof
 
 (** Wywołanie apply_assm name pf
   działa tak jak apply (Logic.by_assumption f) pf,
-  gdzie f jest załorzeniem o nazwie name *)
+  gdzie f jest założeniem o nazwie name *)
 val apply_assm : string -> proof -> proof
 
 val pp_print_proof : Format.formatter -> proof -> unit

@@ -80,3 +80,37 @@ let rec bot_e f thm =
 
 let f1 = Implication(Implication(Variable 'p', Implication(Variable 'q', Variable 'r')),
 Implication(Implication(Variable 'p', Variable 'q'), Implication(Variable 'p', Variable 'r')))
+
+let p1 = imp_i (Variable 'p') (by_assumption (Variable 'p'))
+
+let p2 = imp_i (Variable 'p') (imp_i (Variable 'q') (by_assumption (Variable 'p')) )
+
+let p3 =
+  imp_i
+    (Implication (Variable 'p', Implication (Variable 'q', Variable 'r')))
+    (imp_i
+       (Implication(Variable 'p', Variable 'q'))
+       (imp_i
+          (Variable 'p')
+          (imp_e
+             (imp_e
+                (by_assumption
+                   (Implication(Variable 'p', Implication(Variable 'q', Variable 'r'))))
+                (by_assumption
+                   (Variable 'p'))
+             )
+             (imp_e
+                (by_assumption
+                   (Implication(Variable 'p', Variable 'q')))
+                (by_assumption
+                   (Variable 'p')))
+          )
+       )
+    )
+
+let p4 =
+  imp_i
+    (Contradiction)
+    (bot_e
+       (Variable 'p')
+       (by_assumption (Contradiction)))
